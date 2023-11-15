@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real-time Chat</title>
+  <style>
+    /* Add some basic styling */
+    #chat-container {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    #chat-messages {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    #message-input {
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="username-container">
+    <input type="text" id="username-input" placeholder="Enter your username...">
+    <button onclick="checkUsername()">Proceed</button>
+  </div>
+
+  <div id="chat-container" style="display: none;">
+    <div id="chat-messages"></div>
+    <input type="text" id="message-input" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <!-- Include Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database.js"></script>
+
+  <script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+       apiKey: "AIzaSyCJg1Yg9wlnriKxWdX14WCl6ltgkilqw_0",
+  authDomain: "chating-app-b16da.firebaseapp.com",
+  projectId: "chating-app-b16da",
+  storageBucket: "chating-app-b16da.appspot.com",
+  messagingSenderId: "1063892345204",
+  appId: "1:1063892345204:web:69ee54c99949fcc5e1cc21",
+  measurementId: "G-0Y3NVJP3PP"
+};
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const chatMessagesRef = db.ref('chat-messages');
+
+    const existingUsernames = ['user1', 'user2', 'user3']; // Simulated existing usernames
+
+    function checkUsername() {
+      const usernameInput = document.getElementById('username-input').value.trim();
+      if (usernameInput !== '' && !existingUsernames.includes(usernameInput)) {
+        initializeChat(usernameInput);
+      } else {
+        alert('Username is already taken or invalid. Please choose another.');
+      }
+    }
+
+    function initializeChat(username) {
+      document.getElementById('username-container').style.display = 'none';
+      document.getElementById('chat-container').style.display = 'block';
+
+      const chatMessages = document.getElementById('chat-messages');
+      const welcomeMessage = document.createElement('div');
+      welcomeMessage.textContent = `Welcome, ${username}! Start chatting.`;
+      chatMessages.appendChild(welcomeMessage);
+
+      chatMessagesRef.on('child_added', function(snapshot) {
+        const message = snapshot.val();
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message.message;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
+
+    function sendMessage() {
+      const messageInput = document.getElementById('message-input');
+      const message = messageInput.value;
+      if (message.trim() !== '') {
+        chatMessagesRef.push({
+          message: message,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        messageInput.value = '';
+      }
+    }
+  </script>
+</body>
+</html>
