@@ -19,15 +19,30 @@
       width: 100%;
       margin-top: 10px;
     }
+    #user-list {
+      list-style: none;
+      padding: 0;
+    }
+    #user-list li {
+      cursor: pointer;
+      margin-bottom: 5px;
+    }
+    #user-list li:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   <div id="username-container">
     <input type="text" id="username-input" placeholder="Enter your username...">
-    <button onclick="checkUsername()">Test</button>
+    <button onclick="checkUsername()">Proceed</button>
   </div>
 
   <div id="chat-container" style="display: none;">
+    <div id="user-selection">
+      <h3>User List</h3>
+      <ul id="user-list"></ul>
+    </div>
     <div id="chat-messages"></div>
     <input type="text" id="message-input" placeholder="Type a message...">
     <input type="text" id="recipient-input" placeholder="Enter recipient's username...">
@@ -54,6 +69,7 @@
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const chatMessagesRef = db.ref('chat-messages');
+    const userRef = db.ref('users');
 
     let currentUser = '';
 
@@ -73,6 +89,30 @@
       document.getElementById('username-container').style.display = 'none';
       document.getElementById('chat-container').style.display = 'block';
 
+      populateUserList();
+      displayChatInterface();
+    }
+
+    function populateUserList() {
+      userRef.once('value', function(snapshot) {
+        const userList = document.getElementById('user-list');
+        userList.innerHTML = ''; // Clear previous list
+        
+        snapshot.forEach(function(childSnapshot) {
+          const username = childSnapshot.key;
+          if (username !== currentUser) {
+            const listItem = document.createElement('li');
+            listItem.textContent = username;
+            listItem.onclick = function() {
+              document.getElementById('recipient-input').value = username;
+            };
+            userList.appendChild(listItem);
+          }
+        });
+      });
+    }
+
+    function displayChatInterface() {
       const chatMessages = document.getElementById('chat-messages');
       const welcomeMessage = document.createElement('div');
       welcomeMessage.textContent = `Welcome, ${currentUser}! Start chatting.`;
@@ -81,7 +121,7 @@
       chatMessagesRef.on('child_added', function(snapshot) {
         const message = snapshot.val();
         const messageElement = document.createElement('div');
-        messageElement.textContent = message.message;
+        messageElement.textContent = `${message.sender}: ${message.message}`;
         chatMessages.appendChild(messageElement);
         chatMessages.scrollTop = chatMessages.scrollHeight;
       });
